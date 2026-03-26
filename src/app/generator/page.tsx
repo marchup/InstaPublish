@@ -59,7 +59,7 @@ export default function Generator() {
     if (!image) newErrors.image = 'Subí una imagen de tu producto'
     if (!title.trim()) newErrors.title = 'Escribí el nombre del producto'
     if (!price.trim()) newErrors.price = 'Agregá el precio'
-    if (!contact.trim()) newErrors.contact = 'Agregá tu contacto'
+    // Contacto ahora es opcional
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -119,52 +119,93 @@ export default function Generator() {
           const x = (fmt.width - w) / 2
           const y = (fmt.height - h) / 2
 
-          ctx.fillStyle = '#1A1A2E'
+          // Background con gradiente mejorado
+          const bgGradient = ctx.createLinearGradient(0, 0, fmt.width, fmt.height)
+          bgGradient.addColorStop(0, '#1a1a2e')
+          bgGradient.addColorStop(0.5, '#16213e')
+          bgGradient.addColorStop(1, '#0f0f1a')
+          ctx.fillStyle = bgGradient
           ctx.fillRect(0, 0, fmt.width, fmt.height)
 
-          const gradient = ctx.createLinearGradient(0, 0, fmt.width, fmt.height)
-          gradient.addColorStop(0, '#1A1A2E')
-          gradient.addColorStop(1, '#16213E')
-          ctx.fillStyle = gradient
+          // Efecto de luz sutil
+          const lightGradient = ctx.createRadialGradient(
+            fmt.width / 2, fmt.height / 3, 0,
+            fmt.width / 2, fmt.height / 3, fmt.width * 0.8
+          )
+          lightGradient.addColorStop(0, 'rgba(233, 69, 96, 0.15)')
+          lightGradient.addColorStop(1, 'transparent')
+          ctx.fillStyle = lightGradient
           ctx.fillRect(0, 0, fmt.width, fmt.height)
 
+          // Dibujar imagen con cobertura completa
           ctx.drawImage(img, x, y, w, h)
 
-          const overlayHeight = 280
-          const gradient2 = ctx.createLinearGradient(0, fmt.height - overlayHeight, 0, fmt.height)
-          gradient2.addColorStop(0, 'rgba(26, 26, 46, 0)')
-          gradient2.addColorStop(1, 'rgba(26, 26, 46, 1)')
-          ctx.fillStyle = gradient2
+          // Overlay oscuro en la parte inferior
+          const overlayHeight = fmt.height * 0.35
+          const overlayGradient = ctx.createLinearGradient(0, fmt.height - overlayHeight, 0, fmt.height)
+          overlayGradient.addColorStop(0, 'rgba(15, 15, 26, 0)')
+          overlayGradient.addColorStop(0.3, 'rgba(15, 15, 26, 0.7)')
+          overlayGradient.addColorStop(1, 'rgba(15, 15, 26, 0.95)')
+          ctx.fillStyle = overlayGradient
           ctx.fillRect(0, fmt.height - overlayHeight, fmt.width, overlayHeight)
 
-          ctx.font = 'bold 56px Outfit, sans-serif'
+          // Línea decorativa superior
+          ctx.strokeStyle = '#E94560'
+          ctx.lineWidth = 4
+          ctx.beginPath()
+          ctx.moveTo(0, 0)
+          ctx.lineTo(fmt.width, 0)
+          ctx.stroke()
+
+          // PRECIO - destacado con sombra
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'
+          ctx.shadowBlur = 20
+          ctx.font = `bold ${fmt.width * 0.06}px Outfit, sans-serif`
           ctx.fillStyle = '#00D9A5'
-          ctx.fillText(formatPrice(price), 40, fmt.height - 160)
+          ctx.fillText(formatPrice(price), 40, fmt.height - 180)
+          ctx.shadowBlur = 0
 
-          ctx.font = 'bold 40px Outfit, sans-serif'
+          // TÍTULO del producto
+          ctx.font = `bold ${fmt.width * 0.045}px Outfit, sans-serif`
           ctx.fillStyle = '#FFFFFF'
-          const titleY = fmt.height - 100
-          ctx.fillText(title.substring(0, 25) + (title.length > 25 ? '...' : ''), 40, titleY)
+          const titleText = title.length > 30 ? title.substring(0, 30) + '...' : title
+          ctx.fillText(titleText, 40, fmt.height - 120)
 
-          ctx.font = '24px DM Sans, sans-serif'
-          ctx.fillStyle = '#A0A0B0'
-          ctx.fillText(contact, 40, fmt.height - 50)
-
+          // DESCRICIÓN - texto de venta si existe
           if (description) {
-            ctx.font = '20px DM Sans, sans-serif'
-            const desc = description.substring(0, 60) + (description.length > 60 ? '...' : '')
-            ctx.fillText(desc, 40, 60)
+            ctx.font = `${fmt.width * 0.022}px DM Sans, sans-serif`
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
+            const descText = description.length > 80 ? description.substring(0, 80) + '...' : description
+            ctx.fillText(descText, 40, fmt.height - 85)
           }
 
-          const badgeColor = fmt.platform === 'Instagram' ? '#E94560' : 
-                            fmt.platform === 'WhatsApp' ? '#25D366' : '#1877F2'
-          ctx.fillStyle = badgeColor
+          // CONTACTO - solo si se proporciona
+          if (contact) {
+            ctx.font = `bold ${fmt.width * 0.025}px DM Sans, sans-serif`
+            ctx.fillStyle = '#E94560'
+            ctx.fillText(contact, 40, fmt.height - 45)
+          }
+
+          // Badge de plataforma con estilo
+          const badgeW = fmt.width * 0.18
+          const badgeH = 45
+          const badgeX = 25
+          const badgeY = 25
+          
+          ctx.fillStyle = fmt.platform === 'Instagram' ? '#E94560' : 
+                        fmt.platform === 'WhatsApp' ? '#25D366' : '#1877F2'
           ctx.beginPath()
-          ctx.roundRect(20, 20, 180, 40, 20)
+          ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 25)
           ctx.fill()
+          
           ctx.fillStyle = '#FFFFFF'
-          ctx.font = 'bold 20px DM Sans, sans-serif'
-          ctx.fillText(fmt.platform, 40, 48)
+          ctx.font = `bold ${fmt.width * 0.018}px DM Sans, sans-serif`
+          ctx.fillText(fmt.platform, badgeX + 20, badgeY + 30)
+
+          // Footer con "Publicado con InstaPublish"
+          ctx.font = `${fmt.width * 0.015}px DM Sans, sans-serif`
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'
+          ctx.fillText('Publicado con InstaPublish', fmt.width - 200, fmt.height - 25)
 
           generatedFlyers.push({
             id: fmt.id,
@@ -285,14 +326,13 @@ export default function Generator() {
               </div>
 
               <div className="input-group">
-                <label>Tu contacto (WhatsApp o email) *</label>
+                <label>Tu contacto (WhatsApp, email, o deja "MP privado")</label>
                 <input
                   type="text"
                   value={contact}
                   onChange={(e) => setContact(e.target.value)}
-                  placeholder="+54 9 11 1234-5678"
+                  placeholder="+54 9 11 1234-5678 (opcional)"
                 />
-                {errors.contact && <p className="error-text">{errors.contact}</p>}
               </div>
 
               <div className="input-group">
