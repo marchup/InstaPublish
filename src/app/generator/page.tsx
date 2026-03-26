@@ -23,7 +23,8 @@ export default function Generator() {
   const [title, setTitle] = useState('')
   const [price, setPrice] = useState('')
   const [description, setDescription] = useState('')
-  const [contact, setContact] = useState('')
+  const [contactType, setContactType] = useState('')
+  const [whatsapp, setWhatsapp] = useState('')
   const [category, setCategory] = useState('otros')
   const [generating, setGenerating] = useState(false)
   const [flyers, setFlyers] = useState<GeneratedFlyer[]>([])
@@ -59,7 +60,7 @@ export default function Generator() {
     if (!image) newErrors.image = 'Subí una imagen de tu producto'
     if (!title.trim()) newErrors.title = 'Escribí el nombre del producto'
     if (!price.trim()) newErrors.price = 'Agregá el precio'
-    // Contacto ahora es opcional
+    // Contacto es opcional ahora
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -179,11 +180,18 @@ export default function Generator() {
             ctx.fillText(descText, 40, fmt.height - 85)
           }
 
-          // CONTACTO - solo si se proporciona
-          if (contact) {
+          // CONTACTO - basado en contactType
+          let contactText = ''
+          if (contactType === 'MP privado') {
+            contactText = '📩 Enviar mensaje por privado'
+          } else if (contactType === 'WhatsApp' && whatsapp) {
+            contactText = '💬 ' + whatsapp
+          }
+          
+          if (contactText) {
             ctx.font = `bold ${fmt.width * 0.025}px DM Sans, sans-serif`
             ctx.fillStyle = '#E94560'
-            ctx.fillText(contact, 40, fmt.height - 45)
+            ctx.fillText(contactText, 40, fmt.height - 45)
           }
 
           // Badge de plataforma con estilo
@@ -326,13 +334,24 @@ export default function Generator() {
               </div>
 
               <div className="input-group">
-                <label>Tu contacto (WhatsApp, email, o deja "MP privado")</label>
-                <input
-                  type="text"
-                  value={contact}
-                  onChange={(e) => setContact(e.target.value)}
-                  placeholder="+54 9 11 1234-5678 (opcional)"
-                />
+                <label>Tu contacto</label>
+                <select 
+                  value={contactType} 
+                  onChange={(e) => setContactType(e.target.value)}
+                  style={{ marginBottom: '8px' }}
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="MP privado">📩 Enviar mensaje por privado</option>
+                  <option value="WhatsApp">💬 Escribir por WhatsApp</option>
+                </select>
+                {contactType === 'WhatsApp' && (
+                  <input
+                    type="text"
+                    value={whatsapp}
+                    onChange={(e) => setWhatsapp(e.target.value)}
+                    placeholder="+54 9 11 1234-5678"
+                  />
+                )}
               </div>
 
               <div className="input-group">
