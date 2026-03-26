@@ -1,8 +1,9 @@
 import Link from 'next/link'
+import { User } from '@supabase/supabase-js'
 import styles from './Navbar.module.css'
 
 interface NavbarProps {
-  user?: { email: string } | null
+  user?: User | null
   onLogout?: () => void
 }
 
