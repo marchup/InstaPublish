@@ -5,6 +5,9 @@ import { AuthProvider } from '@/components/AuthProvider'
 export const metadata: Metadata = {
   title: 'FlyerGen - Crea flyers profesionales en segundos',
   description: 'Sube tu foto, agrega precio y contacto, y genera imágenes listas para Instagram, WhatsApp y Marketplace',
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({
