@@ -48,10 +48,20 @@ Requisitos:
 
     // Check for specific error types
     if (error instanceof Error) {
-      if (error.message.includes('API_KEY') || error.message.includes('quota')) {
+      console.error('Error message:', error.message)
+      
+      if (error.message.includes('API_KEY') || error.message.includes('quota') || error.message.includes('400')) {
         return NextResponse.json(
           { error: 'Límite alcanzado, probá más tarde' },
           { status: 429 }
+        )
+      }
+      
+      // Check for invalid API key
+      if (error.message.includes('Invalid') || error.message.includes('PERMISSION_DENIED')) {
+        return NextResponse.json(
+          { error: 'API no configurada. Verificá la API key en Vercel.' },
+          { status: 500 }
         )
       }
     }
