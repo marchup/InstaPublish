@@ -27,6 +27,7 @@ export default function Generator() {
   const [whatsapp, setWhatsapp] = useState('')
   const [category, setCategory] = useState('otros')
   const [generating, setGenerating] = useState(false)
+  const [generatingDesc, setGeneratingDesc] = useState(false)
   const [flyers, setFlyers] = useState<GeneratedFlyer[]>([])
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -331,6 +332,40 @@ export default function Generator() {
                   maxLength={500}
                   rows={3}
                 />
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={async () => {
+                    if (!title.trim() || !price.trim()) {
+                      setErrors({ ...errors, title: 'Escribí el nombre del producto', price: 'Agregá el precio' })
+                      return
+                    }
+                    setGeneratingDesc(true)
+                    try {
+                      const res = await fetch('/api/generate-description', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ producto: title, precio: price, categoria: category })
+                      })
+                      const data = await res.json()
+                      if (data.error) {
+                        setErrors({ ...errors, descripcion: data.error })
+                      } else {
+                        setDescription(data.descripcion)
+                        setErrors({ ...errors, descripcion: '' })
+                      }
+                    } catch {
+                      setErrors({ ...errors, descripcion: 'Error al generar. Intentá de nuevo.' })
+                    } finally {
+                      setGeneratingDesc(false)
+                    }
+                  }}
+                  disabled={generatingDesc}
+                  style={{ marginTop: '8px', width: '100%' }}
+                >
+                  {generatingDesc ? '✨ Generando...' : '✨ Generar descripción'}
+                </button>
+                {errors.descripcion && <p className="error-text">{errors.descripcion}</p>}
               </div>
 
               <div className="input-group">
