@@ -3,11 +3,25 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import dynamic from 'next/dynamic' // ← Importar dynamic
 import Navbar from '@/components/Navbar'
 import { useAuth } from '@/components/AuthProvider'
 import { supabase } from '@/lib/supabase'
-import FlyerGenerator from '@/components/FlyerGenerator'
 import styles from './generator.module.css'
+
+// Importar FlyerGenerator dinámicamente SIN SSR
+const FlyerGenerator = dynamic(
+  () => import('@/components/FlyerGenerator'),
+  { 
+    ssr: false,  // ← Esto evita que se renderice en el servidor
+    loading: () => (
+      <div className={styles.loadingFlyer}>
+        <span>🖼️</span>
+        <p>Cargando generador de flyers...</p>
+      </div>
+    )
+  }
+)
 
 export default function Generator() {
   const { user, loading: authLoading } = useAuth()
