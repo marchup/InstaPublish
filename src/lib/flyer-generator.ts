@@ -185,41 +185,32 @@ export const OUTPUT_FORMATS = [
 
 /**
  * Divide texto en líneas respetando palabras completas
- * @param ctx - Contexto de canvas
- * @param text - Texto a dividir
- * @param maxWidth - Ancho máximo en píxeles
- * @param maxLines - Número máximo de líneas
- * @returns Array de líneas
  */
 function wrapText(
   ctx: CanvasRenderingContext2D,
   text: string,
   maxWidth: number,
-  maxLines: number = 3
+  maxLines: number = 5
 ): string[] {
-  if (!text) return []
+  if (!text || text.trim() === '') return []
   
-  // Dividir por palabras (respetando espacios)
-  const words = text.split(' ')
+  const cleanText = text.trim().replace(/\s+/g, ' ')
+  const words = cleanText.split(' ')
   const lines: string[] = []
-  let currentLine = words[0] || ''
+  let currentLine = ''
   
-  for (let i = 1; i < words.length; i++) {
+  for (let i = 0; i < words.length; i++) {
     const word = words[i]
-    const testLine = currentLine + ' ' + word
+    const testLine = currentLine ? `${currentLine} ${word}` : word
     const metrics = ctx.measureText(testLine)
-    const testWidth = metrics.width
     
-    if (testWidth > maxWidth && currentLine.length > 0) {
+    if (metrics.width > maxWidth && currentLine.length > 0) {
       lines.push(currentLine)
       currentLine = word
       
-      // Si ya alcanzamos el máximo de líneas, salimos
       if (lines.length >= maxLines) {
-        // Añadir "..." a la última línea si hay más texto
         const lastLine = lines[lines.length - 1]
         if (lastLine && i < words.length - 1) {
-          // Truncar la última línea para agregar "..."
           let truncated = lastLine
           while (ctx.measureText(truncated + '...').width > maxWidth && truncated.length > 0) {
             truncated = truncated.slice(0, -1)
@@ -233,7 +224,6 @@ function wrapText(
     }
   }
   
-  // Agregar la última línea
   if (currentLine.length > 0 && lines.length < maxLines) {
     lines.push(currentLine)
   }
@@ -242,62 +232,105 @@ function wrapText(
 }
 
 /**
- * Dibuja texto con wrap en canvas, manejando correctamente el overflow
+ * Dibuja un cuadro con texto que se auto-ajusta al tamaño
  */
-function drawWrappedText(
+function drawAdaptiveTextBox(
   ctx: CanvasRenderingContext2D,
   text: string,
   x: number,
   y: number,
-  maxWidth: number,
-  lineHeight: number,
+  boxWidth: number,
+  boxHeight: number,
+  bgColor: string,
+  textColor: string,
+  baseFontSize: number,
   maxLines: number = 3,
-  textAlign: CanvasTextAlign = 'left'
-): number {
-  if (!text) return y
+  minFontSize: number = 12
+): void {
+  if (!text) return
   
-  const originalAlign = ctx.textAlign
-  ctx.textAlign = textAlign
+  ctx.save()
   
-  const lines = wrapText(ctx, text, maxWidth, maxLines)
-  let currentY = y
+  // Dibujar fondo
+  ctx.fillStyle = bgColor
+  ctx.beginPath()
+  ctx.roundRect(x, y - boxHeight / 2, boxWidth, boxHeight, 12)
+  ctx.fill()
   
-  for (let i = 0; i < lines.length; i++) {
-    let drawX = x
-    if (textAlign === 'center') {
-      drawX = x
-    } else if (textAlign === 'right') {
-      drawX = x
+  ctx.fillStyle = textColor
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  
+  const padding = 20
+  let fontSize = baseFontSize
+  let lines: string[] = []
+  let fits = false
+  
+  while (fontSize >= minFontSize && !fits) {
+    ctx.font = `bold ${fontSize}px 'Outfit', sans-serif`
+    lines = wrapText(ctx, text, boxWidth - padding, maxLines)
+    
+    const lineHeight = fontSize * 1.2
+    const totalHeight = lines.length * lineHeight
+    
+    if (totalHeight <= boxHeight - padding) {
+      fits = true
+    } else {
+      fontSize -= 2
     }
-    ctx.fillText(lines[i], drawX, currentY)
-    currentY += lineHeight
   }
   
-  ctx.textAlign = originalAlign
-  return currentY
+  const lineHeight = fontSize * 1.2
+  const startY = y - ((lines.length - 1) * lineHeight) / 2
+  
+  for (let i = 0; i < lines.length; i++) {
+    ctx.fillText(lines[i], x + 15, startY + (i * lineHeight))
+  }
+  
+  ctx.restore()
 }
 
 /**
- * Trunca texto a una sola línea con "..." si excede el ancho
+ * Dibuja un cuadro para texto de una sola línea (contacto, precio)
  */
-function truncateToWidth(
+function drawSingleLineBox(
   ctx: CanvasRenderingContext2D,
   text: string,
-  maxWidth: number
-): string {
-  if (!text) return ''
+  x: number,
+  y: number,
+  boxWidth: number,
+  boxHeight: number,
+  bgColor: string,
+  textColor: string,
+  baseFontSize: number
+): void {
+  if (!text) return
   
-  let truncated = text
-  let width = ctx.measureText(truncated).width
+  ctx.save()
   
-  if (width <= maxWidth) return text
+  // Dibujar fondo
+  ctx.fillStyle = bgColor
+  ctx.beginPath()
+  ctx.roundRect(x, y - boxHeight / 2, boxWidth, boxHeight, 12)
+  ctx.fill()
   
-  while (width > maxWidth && truncated.length > 3) {
-    truncated = truncated.slice(0, -1)
-    width = ctx.measureText(truncated + '...').width
+  ctx.fillStyle = textColor
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  
+  let fontSize = baseFontSize
+  let textWidth = ctx.measureText(text).width
+  
+  while (textWidth > boxWidth - 30 && fontSize > 12) {
+    fontSize -= 2
+    ctx.font = `bold ${fontSize}px 'DM Sans', sans-serif`
+    textWidth = ctx.measureText(text).width
   }
   
-  return truncated + '...'
+  ctx.font = `bold ${fontSize}px 'DM Sans', sans-serif`
+  ctx.fillText(text, x + 15, y)
+  
+  ctx.restore()
 }
 
 // ============================================
@@ -320,55 +353,6 @@ interface FlyerOptions {
 }
 
 /**
- * Dibuja un cuadro con texto con wrap automático y fondo
- */
-function drawTextBox(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  x: number,
-  y: number,
-  boxWidth: number,
-  boxHeight: number,
-  bgColor: string,
-  textColor: string,
-  font: string,
-  maxLines: number = 3,
-  lineHeightMultiplier: number = 1.3
-): void {
-  if (!text) return
-  
-  // Guardar estado
-  ctx.save()
-  
-  // Dibujar fondo del cuadro
-  ctx.fillStyle = bgColor
-  ctx.beginPath()
-  ctx.roundRect(x, y - boxHeight * 0.7, boxWidth, boxHeight, 10)
-  ctx.fill()
-  
-  // Configurar fuente y color
-  ctx.font = font
-  ctx.fillStyle = textColor
-  ctx.textAlign = 'left'
-  
-  // Calcular line height basado en el tamaño de fuente
-  const fontSize = parseInt(font.match(/\d+px/)?.[0] || '30px')
-  const lineHeight = fontSize * lineHeightMultiplier
-  
-  // Calcular posición Y centrada verticalmente en el cuadro
-  const lines = wrapText(ctx, text, boxWidth - 20, maxLines)
-  const totalTextHeight = lines.length * lineHeight
-  const startY = y - (totalTextHeight / 2) + (lineHeight / 2)
-  
-  // Dibujar cada línea
-  for (let i = 0; i < lines.length; i++) {
-    ctx.fillText(lines[i], x + 15, startY + (i * lineHeight))
-  }
-  
-  ctx.restore()
-}
-
-/**
  * ESTILO AGRESIVO: fondo con blur fuerte, overlay oscuro, precio grande
  */
 export async function generateAgresivo(
@@ -386,7 +370,7 @@ export async function generateAgresivo(
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('No se pudo crear el contexto')
 
-  // 1. Fondo con blur fuerte
+  // 1. Fondo con blur
   const blurAmount = height * 0.08
   const blurredBg = await applyBlur(imageSrc, blurAmount)
   const bgImg = new Image()
@@ -408,7 +392,7 @@ export async function generateAgresivo(
   ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
   ctx.fillRect(0, 0, width, height)
 
-  // 3. Franja lateral de color
+  // 3. Franja lateral
   const stripeWidth = width * 0.12
   ctx.fillStyle = mainColor
   ctx.fillRect(0, 0, stripeWidth, height)
@@ -447,27 +431,39 @@ export async function generateAgresivo(
     productImg.src = imageSrc
   })
 
-  // 6. PRECIO
+  // 6. PRECIO - con ajuste automático de tamaño
   const priceY = height * 0.48
-  const priceBoxHeight = height * 0.12
+  const priceBoxWidth = width * 0.4
+  const priceBoxHeight = height * 0.1
   
   ctx.fillStyle = 'rgba(0, 0, 0, 0.85)'
   ctx.beginPath()
-  ctx.roundRect(width * 0.05, priceY - priceBoxHeight * 0.8, width * 0.4, priceBoxHeight, 15)
+  ctx.roundRect(width * 0.05, priceY - priceBoxHeight / 2, priceBoxWidth, priceBoxHeight, 15)
   ctx.fill()
   
-  ctx.font = `900 ${width * 0.16}px 'Outfit', sans-serif`
-  ctx.fillStyle = '#00FF88'
   ctx.textAlign = 'left'
-  const truncatedPrice = truncateToWidth(ctx, price, width * 0.35)
-  ctx.fillText(truncatedPrice, width * 0.08, priceY)
+  ctx.textBaseline = 'middle'
+  
+  let priceFontSize = width * 0.12
+  let priceText = price
+  ctx.font = `900 ${priceFontSize}px 'Outfit', sans-serif`
+  let priceWidth = ctx.measureText(priceText).width
+  
+  while (priceWidth > priceBoxWidth - 30 && priceFontSize > 20) {
+    priceFontSize -= 4
+    ctx.font = `900 ${priceFontSize}px 'Outfit', sans-serif`
+    priceWidth = ctx.measureText(priceText).width
+  }
+  
+  ctx.fillStyle = '#00FF88'
+  ctx.fillText(priceText, width * 0.08, priceY)
 
-  // 7. NOMBRE - usando drawTextBox
+  // 7. NOMBRE
   const titleBoxWidth = width * 0.4
   const titleBoxHeight = height * 0.14
   const titleY = height * 0.62
   
-  drawTextBox(
+  drawAdaptiveTextBox(
     ctx,
     title,
     width * 0.05,
@@ -476,18 +472,18 @@ export async function generateAgresivo(
     titleBoxHeight,
     'rgba(0, 0, 0, 0.8)',
     '#FFFFFF',
-    `bold ${width * 0.065}px 'Outfit', sans-serif`,
+    width * 0.065,
     3,
-    1.2
+    18
   )
 
   // 8. DESCRIPCIÓN
   if (description) {
     const descBoxWidth = width * 0.4
-    const descBoxHeight = height * 0.14
+    const descBoxHeight = height * 0.15
     const descY = height * 0.77
     
-    drawTextBox(
+    drawAdaptiveTextBox(
       ctx,
       description,
       width * 0.05,
@@ -496,19 +492,19 @@ export async function generateAgresivo(
       descBoxHeight,
       'rgba(0, 0, 0, 0.75)',
       'rgba(255, 255, 255, 0.95)',
-      `${width * 0.032}px 'DM Sans', sans-serif`,
-      3,
-      1.3
+      width * 0.032,
+      4,
+      12
     )
   }
 
   // 9. CONTACTO
   if (contact) {
     const contactBoxWidth = width * 0.4
-    const contactBoxHeight = height * 0.09
-    const contactY = height * 0.92
+    const contactBoxHeight = height * 0.08
+    const contactY = height * 0.93
     
-    drawTextBox(
+    drawSingleLineBox(
       ctx,
       contact,
       width * 0.05,
@@ -517,9 +513,7 @@ export async function generateAgresivo(
       contactBoxHeight,
       '#FF1744',
       '#FFFFFF',
-      `bold ${width * 0.038}px 'DM Sans', sans-serif`,
-      1,
-      1.2
+      width * 0.038
     )
   }
 
@@ -595,25 +589,37 @@ export async function generateLimpio(
 
   // Precio
   const priceY = height * 0.42
+  const priceBoxWidth = width * 0.35
   const priceBoxHeight = height * 0.1
   
   ctx.fillStyle = mainColor
   ctx.beginPath()
-  ctx.roundRect(width * 0.12, priceY - priceBoxHeight * 0.75, width * 0.35, priceBoxHeight, 12)
+  ctx.roundRect(width * 0.12, priceY - priceBoxHeight / 2, priceBoxWidth, priceBoxHeight, 12)
   ctx.fill()
   
-  ctx.font = `900 ${width * 0.14}px 'Outfit', sans-serif`
-  ctx.fillStyle = '#FFFFFF'
   ctx.textAlign = 'left'
-  const truncatedPrice = truncateToWidth(ctx, price, width * 0.3)
-  ctx.fillText(truncatedPrice, width * 0.15, priceY)
+  ctx.textBaseline = 'middle'
+  
+  let priceFontSize = width * 0.12
+  let priceText = price
+  ctx.font = `900 ${priceFontSize}px 'Outfit', sans-serif`
+  let priceWidth = ctx.measureText(priceText).width
+  
+  while (priceWidth > priceBoxWidth - 30 && priceFontSize > 20) {
+    priceFontSize -= 4
+    ctx.font = `900 ${priceFontSize}px 'Outfit', sans-serif`
+    priceWidth = ctx.measureText(priceText).width
+  }
+  
+  ctx.fillStyle = '#FFFFFF'
+  ctx.fillText(priceText, width * 0.15, priceY)
 
   // Título
   const titleBoxWidth = width * 0.35
   const titleBoxHeight = height * 0.12
   const titleY = height * 0.58
   
-  drawTextBox(
+  drawAdaptiveTextBox(
     ctx,
     title,
     width * 0.12,
@@ -622,18 +628,18 @@ export async function generateLimpio(
     titleBoxHeight,
     'rgba(26, 26, 46, 0.95)',
     '#FFFFFF',
-    `bold ${width * 0.07}px 'Outfit', sans-serif`,
+    width * 0.07,
     2,
-    1.2
+    18
   )
 
   // Descripción
   if (description) {
     const descBoxWidth = width * 0.35
-    const descBoxHeight = height * 0.1
+    const descBoxHeight = height * 0.12
     const descY = height * 0.71
     
-    drawTextBox(
+    drawAdaptiveTextBox(
       ctx,
       description,
       width * 0.12,
@@ -642,19 +648,19 @@ export async function generateLimpio(
       descBoxHeight,
       'rgba(0, 0, 0, 0.08)',
       'rgba(0, 0, 0, 0.8)',
-      `${width * 0.03}px 'DM Sans', sans-serif`,
-      2,
-      1.3
+      width * 0.03,
+      3,
+      12
     )
   }
 
   // Contacto
   if (contact) {
     const contactBoxWidth = width * 0.35
-    const contactBoxHeight = height * 0.09
-    const contactY = height * 0.82
+    const contactBoxHeight = height * 0.08
+    const contactY = height * 0.84
     
-    drawTextBox(
+    drawSingleLineBox(
       ctx,
       contact,
       width * 0.12,
@@ -663,9 +669,7 @@ export async function generateLimpio(
       contactBoxHeight,
       mainColor,
       '#FFFFFF',
-      `bold ${width * 0.038}px 'DM Sans', sans-serif`,
-      1,
-      1.2
+      width * 0.038
     )
   }
 
@@ -753,38 +757,63 @@ export async function generateInstagram(
   })
 
   // Título (centrado)
-  ctx.font = `bold ${width * 0.055}px 'Outfit', sans-serif`
-  ctx.fillStyle = '#FFFFFF'
   ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
   ctx.shadowColor = 'rgba(0, 0, 0, 0.3)'
   ctx.shadowBlur = 10
   
-  const titleLines = wrapText(ctx, title, width * 0.8, 2)
-  const titleLineHeight = height * 0.065
+  let titleFontSize = width * 0.055
+  let titleLines: string[] = []
+  let fits = false
+  
+  while (titleFontSize > 24 && !fits) {
+    ctx.font = `bold ${titleFontSize}px 'Outfit', sans-serif`
+    titleLines = wrapText(ctx, title, width * 0.8, 2)
+    const lineHeight = titleFontSize * 1.2
+    const totalHeight = titleLines.length * lineHeight
+    
+    if (totalHeight <= height * 0.12) {
+      fits = true
+    } else {
+      titleFontSize -= 2
+    }
+  }
+  
   let titleY = height * 0.73
+  const titleLineHeight = titleFontSize * 1.2
+  const titleStartY = titleY - ((titleLines.length - 1) * titleLineHeight) / 2
   
   for (let i = 0; i < titleLines.length; i++) {
-    ctx.fillText(titleLines[i], width / 2, titleY)
-    titleY += titleLineHeight
+    ctx.fillText(titleLines[i], width / 2, titleStartY + (i * titleLineHeight))
   }
   ctx.shadowBlur = 0
 
   // Precio
-  ctx.font = `bold ${width * 0.09}px 'Outfit', sans-serif`
+  const priceY = height * 0.83
+  let priceFontSize = width * 0.09
+  let priceText = price
+  ctx.font = `bold ${priceFontSize}px 'Outfit', sans-serif`
+  let priceWidth = ctx.measureText(priceText).width
+  
+  while (priceWidth > width * 0.7 && priceFontSize > 24) {
+    priceFontSize -= 4
+    ctx.font = `bold ${priceFontSize}px 'Outfit', sans-serif`
+    priceWidth = ctx.measureText(priceText).width
+  }
+  
   ctx.fillStyle = '#00D9A5'
   ctx.shadowColor = 'rgba(0, 0, 0, 0.4)'
   ctx.shadowBlur = 15
-  const truncatedPrice = truncateToWidth(ctx, price, width * 0.7)
-  ctx.fillText(truncatedPrice, width / 2, height * 0.83)
+  ctx.fillText(priceText, width / 2, priceY)
   ctx.shadowBlur = 0
 
   // Descripción
   if (description) {
-    ctx.font = `${width * 0.026}px 'DM Sans', sans-serif`
+    let descFontSize = width * 0.026
+    ctx.font = `${descFontSize}px 'DM Sans', sans-serif`
     ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
-    ctx.textAlign = 'center'
     
-    const descLines = wrapText(ctx, description, width * 0.85, 2)
+    let descLines = wrapText(ctx, description, width * 0.85, 2)
     let descY = height * 0.89
     
     for (let i = 0; i < descLines.length; i++) {
@@ -795,11 +824,20 @@ export async function generateInstagram(
 
   // Contacto
   if (contact) {
-    ctx.font = `bold ${width * 0.028}px 'DM Sans', sans-serif`
+    let contactFontSize = width * 0.028
+    ctx.font = `bold ${contactFontSize}px 'DM Sans', sans-serif`
     ctx.fillStyle = '#FFFFFF'
-    ctx.textAlign = 'center'
-    const truncatedContact = truncateToWidth(ctx, contact, width * 0.85)
-    ctx.fillText(truncatedContact, width / 2, height * 0.94)
+    
+    let contactText = contact
+    let contactWidth = ctx.measureText(contactText).width
+    
+    while (contactWidth > width * 0.85 && contactFontSize > 16) {
+      contactFontSize -= 2
+      ctx.font = `bold ${contactFontSize}px 'DM Sans', sans-serif`
+      contactWidth = ctx.measureText(contactText).width
+    }
+    
+    ctx.fillText(contactText, width / 2, height * 0.94)
   }
 
   // Badge
