@@ -291,48 +291,68 @@ export async function generateAgresivo(
     productImg.src = imageSrc
   })
 
-  // 6. PRECIO - ENORME Y IMPACTANTE (verde neón)
+  // 6. PRECIO - ENORME Y IMPACTANTE (verde neón sobre fondo oscuro)
+  const priceBoxPadding = width * 0.04
+  const priceY = height * 0.48
+  const priceBoxHeight = height * 0.12
+  
+  // Fondo del precio
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)'
+  ctx.beginPath()
+  ctx.roundRect(width * 0.05, priceY - priceBoxHeight * 0.8, width * 0.4, priceBoxHeight, 15)
+  ctx.fill()
+  
   ctx.font = `900 ${width * 0.18}px 'Outfit', sans-serif`
   ctx.fillStyle = '#00FF88'
   ctx.textAlign = 'left'
-  ctx.shadowColor = 'rgba(0, 0, 0, 1)'
-  ctx.shadowBlur = 30
-  ctx.shadowOffsetX = 3
-  ctx.shadowOffsetY = 3
-  ctx.fillText(price, width * 0.08, height * 0.55)
-  ctx.shadowBlur = 0
+  ctx.fillText(price, width * 0.08, priceY)
 
-  // 7. NOMBRE - grande y visible
+  // 7. NOMBRE - grande y visible sobre fondo oscuro
+  const titleBoxY = height * 0.62
+  const titleBoxHeight = height * 0.1
+  
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'
+  ctx.beginPath()
+  ctx.roundRect(width * 0.05, titleBoxY - titleBoxHeight * 0.75, width * 0.4, titleBoxHeight, 12)
+  ctx.fill()
+  
   ctx.font = `bold ${width * 0.08}px 'Outfit', sans-serif`
   ctx.fillStyle = '#FFFFFF'
   ctx.textAlign = 'left'
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
-  ctx.shadowBlur = 20
   const titleText = title.length > 25 ? title.substring(0, 25) + '...' : title
-  ctx.fillText(titleText, width * 0.08, height * 0.68)
-  ctx.shadowBlur = 0
+  ctx.fillText(titleText, width * 0.08, titleBoxY)
 
   // 8. DESCRIPCIÓN si existe
   if (description) {
-    ctx.font = `${width * 0.035}px 'DM Sans', sans-serif`
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'
+    const descBoxY = height * 0.72
+    const descBoxHeight = height * 0.08
+    
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)'
+    ctx.beginPath()
+    ctx.roundRect(width * 0.05, descBoxY - descBoxHeight * 0.7, width * 0.4, descBoxHeight, 10)
+    ctx.fill()
+    
+    ctx.font = `${width * 0.032}px 'DM Sans', sans-serif`
+    ctx.fillStyle = 'rgba(255, 255, 255, 1)'
     ctx.textAlign = 'left'
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'
-    ctx.shadowBlur = 15
     const descText = description.length > 60 ? description.substring(0, 60) + '...' : description
-    ctx.fillText(descText, width * 0.08, height * 0.76)
-    ctx.shadowBlur = 0
+    ctx.fillText(descText, width * 0.08, descBoxY)
   }
 
   // 9. CONTACTO si existe
   if (contact) {
-    ctx.font = `bold ${width * 0.04}px 'DM Sans', sans-serif`
-    ctx.fillStyle = '#00FF88'
+    const contactBoxY = height * 0.82
+    const contactBoxHeight = height * 0.08
+    
+    ctx.fillStyle = '#FF1744'
+    ctx.beginPath()
+    ctx.roundRect(width * 0.05, contactBoxY - contactBoxHeight * 0.7, width * 0.4, contactBoxHeight, 10)
+    ctx.fill()
+    
+    ctx.font = `bold ${width * 0.038}px 'DM Sans', sans-serif`
+    ctx.fillStyle = '#FFFFFF'
     ctx.textAlign = 'left'
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
-    ctx.shadowBlur = 15
-    ctx.fillText(contact, width * 0.08, height * 0.84)
-    ctx.shadowBlur = 0
+    ctx.fillText(contact, width * 0.08, contactBoxY)
   }
 
   // 10. Badge de plataforma
@@ -406,34 +426,66 @@ export async function generateLimpio(
     productImg.src = imageSrc
   })
 
-  // 4. PRECIO - GRANDE Y DESTACADO
-  ctx.font = `900 ${width * 0.16}px 'Outfit', sans-serif`
+  // 4. PRECIO - GRANDE Y DESTACADO sobre fondo de color
+  const priceBoxY = height * 0.42
+  const priceBoxHeight = height * 0.1
+  
   ctx.fillStyle = mainColor
+  ctx.beginPath()
+  ctx.roundRect(width * 0.12, priceBoxY - priceBoxHeight * 0.75, width * 0.35, priceBoxHeight, 12)
+  ctx.fill()
+  
+  ctx.font = `900 ${width * 0.16}px 'Outfit', sans-serif`
+  ctx.fillStyle = '#FFFFFF'
   ctx.textAlign = 'left'
-  ctx.fillText(price, width * 0.12, height * 0.45)
+  ctx.fillText(price, width * 0.15, priceBoxY)
 
-  // 5. NOMBRE - grande y visible
+  // 5. NOMBRE - grande y visible sobre fondo oscuro
+  const titleBoxY = height * 0.58
+  const titleBoxHeight = height * 0.09
+  
+  ctx.fillStyle = 'rgba(26, 26, 46, 0.95)'
+  ctx.beginPath()
+  ctx.roundRect(width * 0.12, titleBoxY - titleBoxHeight * 0.75, width * 0.35, titleBoxHeight, 10)
+  ctx.fill()
+  
   ctx.font = `bold ${width * 0.075}px 'Outfit', sans-serif`
-  ctx.fillStyle = '#1A1A2E'
+  ctx.fillStyle = '#FFFFFF'
   ctx.textAlign = 'left'
   const titleText = title.length > 28 ? title.substring(0, 28) + '...' : title
-  ctx.fillText(titleText, width * 0.12, height * 0.58)
+  ctx.fillText(titleText, width * 0.15, titleBoxY)
 
   // 6. DESCRIPCIÓN si existe
   if (description) {
+    const descBoxY = height * 0.67
+    const descBoxHeight = height * 0.07
+    
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.08)'
+    ctx.beginPath()
+    ctx.roundRect(width * 0.12, descBoxY - descBoxHeight * 0.7, width * 0.35, descBoxHeight, 8)
+    ctx.fill()
+    
     ctx.font = `${width * 0.032}px 'DM Sans', sans-serif`
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
     ctx.textAlign = 'left'
     const descText = description.length > 70 ? description.substring(0, 70) + '...' : description
-    ctx.fillText(descText, width * 0.12, height * 0.66)
+    ctx.fillText(descText, width * 0.15, descBoxY)
   }
 
   // 7. CONTACTO si existe
   if (contact) {
-    ctx.font = `bold ${width * 0.038}px 'DM Sans', sans-serif`
+    const contactBoxY = height * 0.76
+    const contactBoxHeight = height * 0.08
+    
     ctx.fillStyle = mainColor
+    ctx.beginPath()
+    ctx.roundRect(width * 0.12, contactBoxY - contactBoxHeight * 0.7, width * 0.35, contactBoxHeight, 10)
+    ctx.fill()
+    
+    ctx.font = `bold ${width * 0.038}px 'DM Sans', sans-serif`
+    ctx.fillStyle = '#FFFFFF'
     ctx.textAlign = 'left'
-    ctx.fillText(contact, width * 0.12, height * 0.75)
+    ctx.fillText(contact, width * 0.15, contactBoxY)
   }
 
   // 8. Badge de plataforma
