@@ -345,7 +345,12 @@ export default function Generator() {
                       const res = await fetch('/api/generate-description', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ producto: title, precio: price, categoria: category })
+                        body: JSON.stringify({ 
+                          producto: title, 
+                          precio: price, 
+                          categoria: category,
+                          descripcion: description // Enviar la descripción que escribió el usuario
+                        })
                       })
                       const data = await res.json()
                       if (data.error) {
