@@ -293,34 +293,45 @@ export async function generateAgresivo(
     productImg.src = imageSrc
   })
 
-  // 5. PRECIO - grande y blanco
-  ctx.font = `bold ${width * 0.1}px 'Outfit', sans-serif`
-  ctx.fillStyle = '#FFFFFF'
+  // 5. PRECIO - GRANDE Y IMPACTANTE (verde vibrante)
+  ctx.font = `bold ${width * 0.14}px 'Outfit', sans-serif`
+  ctx.fillStyle = '#00FF88'
   ctx.textAlign = 'center'
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
-  ctx.shadowBlur = 20
-  ctx.fillText(price, width / 2, height * 0.72)
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.9)'
+  ctx.shadowBlur = 25
+  ctx.shadowOffsetX = 2
+  ctx.shadowOffsetY = 2
+  ctx.fillText(price, width / 2, height * 0.68)
   ctx.shadowBlur = 0
 
-  // 6. NOMBRE - más pequeño
-  ctx.font = `bold ${width * 0.045}px 'Outfit', sans-serif`
+  // 6. NOMBRE - más grande y visible
+  ctx.font = `bold ${width * 0.065}px 'Outfit', sans-serif`
   ctx.fillStyle = '#FFFFFF'
-  const titleText = title.length > 25 ? title.substring(0, 25) + '...' : title
-  ctx.fillText(titleText, width / 2, height * 0.78)
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'
+  ctx.shadowBlur = 15
+  const titleText = title.length > 20 ? title.substring(0, 20) + '...' : title
+  ctx.fillText(titleText, width / 2, height * 0.76)
+  ctx.shadowBlur = 0
 
-  // 7. DESCRIPCIÓN si existe
+  // 7. DESCRIPCIÓN si existe - más visible
   if (description) {
-    ctx.font = `${width * 0.025}px 'DM Sans', sans-serif`
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'
-    const descText = description.length > 60 ? description.substring(0, 60) + '...' : description
-    ctx.fillText(descText, width / 2, height * 0.83)
+    ctx.font = `${width * 0.032}px 'DM Sans', sans-serif`
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)'
+    ctx.shadowBlur = 10
+    const descText = description.length > 50 ? description.substring(0, 50) + '...' : description
+    ctx.fillText(descText, width / 2, height * 0.82)
+    ctx.shadowBlur = 0
   }
 
-  // 8. CONTACTO si existe
+  // 8. CONTACTO si existe - más grande
   if (contact) {
-    ctx.font = `bold ${width * 0.03}px 'DM Sans', sans-serif`
-    ctx.fillStyle = '#E94560'
+    ctx.font = `bold ${width * 0.038}px 'DM Sans', sans-serif`
+    ctx.fillStyle = '#FFFFFF'
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'
+    ctx.shadowBlur = 12
     ctx.fillText(contact, width / 2, height * 0.88)
+    ctx.shadowBlur = 0
   }
 
   // 9. Badge de plataforma

@@ -82,19 +82,22 @@ export default function FlyerGenerator({
   }
 
   const downloadAll = async () => {
-    const JSZip = (await import('jszip')).default
-    const { saveAs } = await import('file-saver')
-
-    const zip = new JSZip()
-    flyers.forEach((flyer) => {
-      if (flyer.dataUrl) {
-        const base64 = flyer.dataUrl.split(',')[1]
-        zip.file(`${flyer.style}-${flyer.format}.png`, base64, { base64: true })
+    try {
+      // Descargar cada flyer individualmente en lugar de ZIP
+      for (const flyer of flyers) {
+        if (flyer.dataUrl) {
+          const link = document.createElement('a')
+          link.download = `flyer-${flyer.style}-${flyer.format}.png`
+          link.href = flyer.dataUrl
+          link.click()
+          // Pequeña pausa entre descargas
+          await new Promise(resolve => setTimeout(resolve, 200))
+        }
       }
-    })
-
-    const content = await zip.generateAsync({ type: 'blob' })
-    saveAs(content, 'flyers.zip')
+    } catch (err) {
+      console.error('Error descargando flyers:', err)
+      setError('Error al descargar los flyers')
+    }
   }
 
   // Agrupar por estilo
