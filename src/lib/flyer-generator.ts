@@ -2,6 +2,9 @@
 
 import type { GeneratedFlyer } from './types'
 
+// Re-exportar el tipo para uso externo
+export type { GeneratedFlyer, FlyerGenerationOptions } from './types'
+
 // ============================================
 // UTILIDADES DE COLOR
 // ============================================
@@ -589,7 +592,7 @@ export async function generateAllFlyers(
   const results: GeneratedFlyer[] = []
 
   // Generar cada estilo
-  const styles = [
+  const styles: Array<{ id: 'agresivo' | 'limpio' | 'instagram'; generator: typeof generateAgresivo }> = [
     { id: 'agresivo', generator: generateAgresivo },
     { id: 'limpio', generator: generateLimpio },
     { id: 'instagram', generator: generateInstagram },
