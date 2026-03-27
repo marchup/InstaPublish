@@ -222,7 +222,7 @@ export async function generateAgresivo(
   height: number
 ): Promise<string> {
   const { title, price, description, contact, paleta, improveImage } = options
-  const { mainColor, darkColor } = paleta
+  const { mainColor } = paleta
 
   const canvas = document.createElement('canvas')
   canvas.width = width
@@ -231,7 +231,7 @@ export async function generateAgresivo(
   if (!ctx) throw new Error('No se pudo crear el contexto')
 
   // 1. Fondo con blur fuerte
-  const blurAmount = height * 0.05 // 5% de la altura
+  const blurAmount = height * 0.08
   const blurredBg = await applyBlur(imageSrc, blurAmount)
   const bgImg = new Image()
   bgImg.crossOrigin = 'anonymous'
@@ -248,21 +248,21 @@ export async function generateAgresivo(
     bgImg.src = blurredBg
   })
 
-  // 2. Overlay oscuro (35% opacidad)
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)'
+  // 2. Overlay oscuro fuerte (50% opacidad)
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
   ctx.fillRect(0, 0, width, height)
 
-  // 3. Franja de color lateral (mainColor o rojo)
-  const stripeWidth = width * 0.08
+  // 3. Franja lateral de color (mainColor)
+  const stripeWidth = width * 0.12
   ctx.fillStyle = mainColor
   ctx.fillRect(0, 0, stripeWidth, height)
 
-  // Barra decorativa adicional
-  ctx.fillStyle = '#E94560' // Rojo vibrante
-  ctx.fillRect(stripeWidth, 0, width * 0.02, height)
+  // 4. Barra roja decorativa
+  ctx.fillStyle = '#FF1744'
+  ctx.fillRect(stripeWidth, 0, width * 0.03, height)
 
-  // 4. Imagen del producto (centrada, más pequeña)
-  const imgSize = Math.min(width, height) * 0.5
+  // 5. Imagen del producto (lado derecho, más pequeña)
+  const imgSize = Math.min(width, height) * 0.45
   const productImg = new Image()
   productImg.crossOrigin = 'anonymous'
   
@@ -271,19 +271,17 @@ export async function generateAgresivo(
       const scale = Math.max(imgSize / productImg.width, imgSize / productImg.height)
       const w = productImg.width * scale
       const h = productImg.height * scale
-      const x = (width - w) / 2
-      const y = height * 0.15
+      const x = width * 0.55 - w / 2
+      const y = height * 0.35 - h / 2
 
-      // Mejorar imagen si está habilitado
       if (improveImage) {
-        ctx.filter = 'brightness(1.1) contrast(1.2) saturate(1.2)'
+        ctx.filter = 'brightness(1.15) contrast(1.25) saturate(1.3)'
       }
 
-      // Sombra detrás de la imagen
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'
-      ctx.shadowBlur = 30
-      ctx.shadowOffsetX = 0
-      ctx.shadowOffsetY = 10
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
+      ctx.shadowBlur = 40
+      ctx.shadowOffsetX = 5
+      ctx.shadowOffsetY = 15
       
       ctx.drawImage(productImg, x, y, w, h)
       ctx.filter = 'none'
@@ -293,56 +291,59 @@ export async function generateAgresivo(
     productImg.src = imageSrc
   })
 
-  // 5. PRECIO - GRANDE Y IMPACTANTE (verde vibrante)
-  ctx.font = `bold ${width * 0.14}px 'Outfit', sans-serif`
+  // 6. PRECIO - ENORME Y IMPACTANTE (verde neón)
+  ctx.font = `900 ${width * 0.18}px 'Outfit', sans-serif`
   ctx.fillStyle = '#00FF88'
-  ctx.textAlign = 'center'
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.9)'
-  ctx.shadowBlur = 25
-  ctx.shadowOffsetX = 2
-  ctx.shadowOffsetY = 2
-  ctx.fillText(price, width / 2, height * 0.68)
+  ctx.textAlign = 'left'
+  ctx.shadowColor = 'rgba(0, 0, 0, 1)'
+  ctx.shadowBlur = 30
+  ctx.shadowOffsetX = 3
+  ctx.shadowOffsetY = 3
+  ctx.fillText(price, width * 0.08, height * 0.55)
   ctx.shadowBlur = 0
 
-  // 6. NOMBRE - más grande y visible
-  ctx.font = `bold ${width * 0.065}px 'Outfit', sans-serif`
+  // 7. NOMBRE - grande y visible
+  ctx.font = `bold ${width * 0.08}px 'Outfit', sans-serif`
   ctx.fillStyle = '#FFFFFF'
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'
-  ctx.shadowBlur = 15
-  const titleText = title.length > 20 ? title.substring(0, 20) + '...' : title
-  ctx.fillText(titleText, width / 2, height * 0.76)
+  ctx.textAlign = 'left'
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
+  ctx.shadowBlur = 20
+  const titleText = title.length > 25 ? title.substring(0, 25) + '...' : title
+  ctx.fillText(titleText, width * 0.08, height * 0.68)
   ctx.shadowBlur = 0
 
-  // 7. DESCRIPCIÓN si existe - más visible
+  // 8. DESCRIPCIÓN si existe
   if (description) {
-    ctx.font = `${width * 0.032}px 'DM Sans', sans-serif`
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)'
-    ctx.shadowBlur = 10
-    const descText = description.length > 50 ? description.substring(0, 50) + '...' : description
-    ctx.fillText(descText, width / 2, height * 0.82)
-    ctx.shadowBlur = 0
-  }
-
-  // 8. CONTACTO si existe - más grande
-  if (contact) {
-    ctx.font = `bold ${width * 0.038}px 'DM Sans', sans-serif`
-    ctx.fillStyle = '#FFFFFF'
+    ctx.font = `${width * 0.035}px 'DM Sans', sans-serif`
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'
+    ctx.textAlign = 'left'
     ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'
-    ctx.shadowBlur = 12
-    ctx.fillText(contact, width / 2, height * 0.88)
+    ctx.shadowBlur = 15
+    const descText = description.length > 60 ? description.substring(0, 60) + '...' : description
+    ctx.fillText(descText, width * 0.08, height * 0.76)
     ctx.shadowBlur = 0
   }
 
-  // 9. Badge de plataforma
-  ctx.fillStyle = '#E94560'
+  // 9. CONTACTO si existe
+  if (contact) {
+    ctx.font = `bold ${width * 0.04}px 'DM Sans', sans-serif`
+    ctx.fillStyle = '#00FF88'
+    ctx.textAlign = 'left'
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)'
+    ctx.shadowBlur = 15
+    ctx.fillText(contact, width * 0.08, height * 0.84)
+    ctx.shadowBlur = 0
+  }
+
+  // 10. Badge de plataforma
+  ctx.fillStyle = '#FF1744'
   ctx.beginPath()
-  ctx.roundRect(25, 25, width * 0.15, 40, 20)
+  ctx.roundRect(width * 0.08, height * 0.05, width * 0.18, 50, 25)
   ctx.fill()
   ctx.fillStyle = '#FFFFFF'
-  ctx.font = `bold ${width * 0.018}px 'DM Sans', sans-serif`
-  ctx.textAlign = 'left'
-  ctx.fillText('AGRESIVO', 35, 52)
+  ctx.font = `bold ${width * 0.022}px 'Outfit', sans-serif`
+  ctx.textAlign = 'center'
+  ctx.fillText('AGRESIVO', width * 0.17, height * 0.085)
 
   return canvas.toDataURL('image/png')
 }
@@ -357,7 +358,7 @@ export async function generateLimpio(
   height: number
 ): Promise<string> {
   const { title, price, description, contact, paleta, improveImage } = options
-  const { darkColor, lightColor } = paleta
+  const { mainColor, darkColor } = paleta
 
   const canvas = document.createElement('canvas')
   canvas.width = width
@@ -365,12 +366,17 @@ export async function generateLimpio(
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('No se pudo crear el contexto')
 
-  // 1. Fondo claro/blanco
-  ctx.fillStyle = '#FAFAFA'
+  // 1. Fondo blanco puro
+  ctx.fillStyle = '#FFFFFF'
   ctx.fillRect(0, 0, width, height)
 
-  // 2. Imagen del producto (centrada, con improve si está habilitado)
-  const imgSize = Math.min(width, height) * 0.55
+  // 2. Barra lateral de color (mainColor)
+  const barWidth = width * 0.08
+  ctx.fillStyle = mainColor
+  ctx.fillRect(0, 0, barWidth, height)
+
+  // 3. Imagen del producto (lado derecho, más pequeña)
+  const imgSize = Math.min(width, height) * 0.48
   const productImg = new Image()
   productImg.crossOrigin = 'anonymous'
   
@@ -379,69 +385,66 @@ export async function generateLimpio(
       const scale = Math.max(imgSize / productImg.width, imgSize / productImg.height)
       const w = productImg.width * scale
       const h = productImg.height * scale
-      const x = (width - w) / 2
-      const y = height * 0.1
+      const x = width * 0.65 - w / 2
+      const y = height * 0.35 - h / 2
 
       if (improveImage) {
         ctx.filter = 'brightness(1.1) contrast(1.2) saturate(1.2)'
       }
 
-      // Borde sutil
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)'
-      ctx.lineWidth = 1
-      ctx.beginPath()
-      ctx.roundRect(x - 5, y - 5, w + 10, h + 10, 8)
-      ctx.stroke()
-
+      // Sombra sutil
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.1)'
+      ctx.shadowBlur = 20
+      ctx.shadowOffsetX = 0
+      ctx.shadowOffsetY = 8
+      
       ctx.drawImage(productImg, x, y, w, h)
       ctx.filter = 'none'
+      ctx.shadowBlur = 0
       resolve()
     }
     productImg.src = imageSrc
   })
 
-  // 3. NOMBRE - texto oscuro/negro
-  ctx.font = `bold ${width * 0.05}px 'Outfit', sans-serif`
-  ctx.fillStyle = '#1A1A2E'
-  ctx.textAlign = 'center'
-  const titleText = title.length > 30 ? title.substring(0, 30) + '...' : title
-  ctx.fillText(titleText, width / 2, height * 0.72)
-
-  // 4. PRECIO - visible pero no dominante
-  ctx.font = `bold ${width * 0.07}px 'Outfit', sans-serif`
-  ctx.fillStyle = darkColor
-  ctx.fillText(price, width / 2, height * 0.8)
-
-  // 5. DESCRIPCIÓN si existe (texto más suave)
-  if (description) {
-    ctx.font = `${width * 0.028}px 'DM Sans', sans-serif`
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
-    const descText = description.length > 80 ? description.substring(0, 80) + '...' : description
-    ctx.fillText(descText, width / 2, height * 0.86)
-  }
-
-  // 6. CONTACTO si existe
-  if (contact) {
-    ctx.font = `bold ${width * 0.025}px 'DM Sans', sans-serif`
-    ctx.fillStyle = darkColor
-    ctx.fillText(contact, width / 2, height * 0.92)
-  }
-
-  // 7. Badge de plataforma discreto
-  ctx.fillStyle = lightColor
-  ctx.beginPath()
-  ctx.roundRect(25, 25, width * 0.12, 35, 18)
-  ctx.fill()
-  ctx.fillStyle = darkColor
-  ctx.font = `bold ${width * 0.015}px 'DM Sans', sans-serif`
+  // 4. PRECIO - GRANDE Y DESTACADO
+  ctx.font = `900 ${width * 0.16}px 'Outfit', sans-serif`
+  ctx.fillStyle = mainColor
   ctx.textAlign = 'left'
-  ctx.fillText('LIMPIO', 32, 48)
+  ctx.fillText(price, width * 0.12, height * 0.45)
 
-  // 8. Footer sutil
-  ctx.font = `${width * 0.012}px 'DM Sans', sans-serif`
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
+  // 5. NOMBRE - grande y visible
+  ctx.font = `bold ${width * 0.075}px 'Outfit', sans-serif`
+  ctx.fillStyle = '#1A1A2E'
+  ctx.textAlign = 'left'
+  const titleText = title.length > 28 ? title.substring(0, 28) + '...' : title
+  ctx.fillText(titleText, width * 0.12, height * 0.58)
+
+  // 6. DESCRIPCIÓN si existe
+  if (description) {
+    ctx.font = `${width * 0.032}px 'DM Sans', sans-serif`
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'
+    ctx.textAlign = 'left'
+    const descText = description.length > 70 ? description.substring(0, 70) + '...' : description
+    ctx.fillText(descText, width * 0.12, height * 0.66)
+  }
+
+  // 7. CONTACTO si existe
+  if (contact) {
+    ctx.font = `bold ${width * 0.038}px 'DM Sans', sans-serif`
+    ctx.fillStyle = mainColor
+    ctx.textAlign = 'left'
+    ctx.fillText(contact, width * 0.12, height * 0.75)
+  }
+
+  // 8. Badge de plataforma
+  ctx.fillStyle = mainColor
+  ctx.beginPath()
+  ctx.roundRect(width * 0.12, height * 0.05, width * 0.15, 45, 22)
+  ctx.fill()
+  ctx.fillStyle = '#FFFFFF'
+  ctx.font = `bold ${width * 0.02}px 'Outfit', sans-serif`
   ctx.textAlign = 'center'
-  ctx.fillText('InstaPublish', width / 2, height - 20)
+  ctx.fillText('LIMPIO', width * 0.195, height * 0.082)
 
   return canvas.toDataURL('image/png')
 }
