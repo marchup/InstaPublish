@@ -194,6 +194,79 @@ export const OUTPUT_FORMATS = [
 ] as const
 
 // ============================================
+// UTILIDADES DE TEXTO CON WRAP
+// ============================================
+
+/**
+ * Dibuja texto con wrap automático en canvas
+ */
+function drawWrappedText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+  maxLines: number = 10
+): number {
+  if (!text) return y
+
+  const words = text.split('')
+  const lines: string[] = []
+  let currentLine = ''
+
+  // Método más preciso: dividir por caracteres respetando espacios
+  for (let i = 0; i < words.length; i++) {
+    const char = words[i]
+    const testLine = currentLine + char
+    const metrics = ctx.measureText(testLine)
+    const testWidth = metrics.width
+
+    if (testWidth > maxWidth && currentLine.length > 0) {
+      lines.push(currentLine)
+      currentLine = char
+      if (lines.length >= maxLines) break
+    } else {
+      currentLine = testLine
+    }
+  }
+  
+  if (currentLine.length > 0 && lines.length < maxLines) {
+    lines.push(currentLine)
+  }
+
+  // Dibujar cada línea
+  let currentY = y
+  for (let i = 0; i < lines.length; i++) {
+    ctx.fillText(lines[i], x, currentY)
+    currentY += lineHeight
+  }
+
+  return currentY
+}
+
+/**
+ * Trunca texto y agrega "..." si excede el ancho máximo
+ */
+function truncateTextToWidth(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+): string {
+  let truncated = text
+  let width = ctx.measureText(truncated).width
+  
+  if (width <= maxWidth) return text
+  
+  while (width > maxWidth && truncated.length > 3) {
+    truncated = truncated.slice(0, -1)
+    width = ctx.measureText(truncated + '...').width
+  }
+  
+  return truncated + '...'
+}
+
+// ============================================
 // GENERADORES DE ESTILO
 // ============================================
 
@@ -291,7 +364,7 @@ export async function generateAgresivo(
     productImg.src = imageSrc
   })
 
-  // 6. PRECIO - ENORME Y IMPACTANTE (verde neón sobre fondo oscuro)
+  // 6. PRECIO - ENORME Y IMPACTANTE
   const priceBoxPadding = width * 0.04
   const priceY = height * 0.48
   const priceBoxHeight = height * 0.12
@@ -305,27 +378,43 @@ export async function generateAgresivo(
   ctx.font = `900 ${width * 0.18}px 'Outfit', sans-serif`
   ctx.fillStyle = '#00FF88'
   ctx.textAlign = 'left'
-  ctx.fillText(price, width * 0.08, priceY)
+  // Truncar precio si es muy largo
+  const truncatedPrice = truncateTextToWidth(ctx, price, width * 0.35)
+  ctx.fillText(truncatedPrice, width * 0.08, priceY)
 
-  // 7. NOMBRE - grande y visible sobre fondo oscuro
+  // 7. NOMBRE - con wrap automático
   const titleBoxY = height * 0.62
-  const titleBoxHeight = height * 0.1
+  const titleBoxHeight = height * 0.15 // Aumentado para más líneas
   
   ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'
   ctx.beginPath()
-  ctx.roundRect(width * 0.05, titleBoxY - titleBoxHeight * 0.75, width * 0.4, titleBoxHeight, 12)
+  ctx.roundRect(width * 0.05, titleBoxY - titleBoxHeight * 0.7, width * 0.4, titleBoxHeight, 12)
   ctx.fill()
   
-  ctx.font = `bold ${width * 0.08}px 'Outfit', sans-serif`
+  ctx.font = `bold ${width * 0.065}px 'Outfit', sans-serif`
   ctx.fillStyle = '#FFFFFF'
   ctx.textAlign = 'left'
-  const titleText = title.length > 25 ? title.substring(0, 25) + '...' : title
-  ctx.fillText(titleText, width * 0.08, titleBoxY)
+  
+  // Usar wrap para el título
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(width * 0.05, titleBoxY - titleBoxHeight * 0.7, width * 0.4, titleBoxHeight)
+  ctx.clip()
+  drawWrappedText(
+    ctx, 
+    title, 
+    width * 0.08, 
+    titleBoxY - titleBoxHeight * 0.3, 
+    width * 0.35, 
+    height * 0.065,
+    3
+  )
+  ctx.restore()
 
-  // 8. DESCRIPCIÓN si existe
+  // 8. DESCRIPCIÓN si existe - con wrap
   if (description) {
-    const descBoxY = height * 0.72
-    const descBoxHeight = height * 0.08
+    const descBoxY = height * 0.77
+    const descBoxHeight = height * 0.12
     
     ctx.fillStyle = 'rgba(0, 0, 0, 0.75)'
     ctx.beginPath()
@@ -335,13 +424,26 @@ export async function generateAgresivo(
     ctx.font = `${width * 0.032}px 'DM Sans', sans-serif`
     ctx.fillStyle = 'rgba(255, 255, 255, 1)'
     ctx.textAlign = 'left'
-    const descText = description.length > 60 ? description.substring(0, 60) + '...' : description
-    ctx.fillText(descText, width * 0.08, descBoxY)
+    
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(width * 0.05, descBoxY - descBoxHeight * 0.7, width * 0.4, descBoxHeight)
+    ctx.clip()
+    drawWrappedText(
+      ctx,
+      description,
+      width * 0.08,
+      descBoxY - descBoxHeight * 0.3,
+      width * 0.35,
+      height * 0.04,
+      3
+    )
+    ctx.restore()
   }
 
   // 9. CONTACTO si existe
   if (contact) {
-    const contactBoxY = height * 0.82
+    const contactBoxY = height * 0.89
     const contactBoxHeight = height * 0.08
     
     ctx.fillStyle = '#FF1744'
@@ -352,7 +454,8 @@ export async function generateAgresivo(
     ctx.font = `bold ${width * 0.038}px 'DM Sans', sans-serif`
     ctx.fillStyle = '#FFFFFF'
     ctx.textAlign = 'left'
-    ctx.fillText(contact, width * 0.08, contactBoxY)
+    const truncatedContact = truncateTextToWidth(ctx, contact, width * 0.35)
+    ctx.fillText(truncatedContact, width * 0.08, contactBoxY)
   }
 
   // 10. Badge de plataforma
@@ -412,7 +515,6 @@ export async function generateLimpio(
         ctx.filter = 'brightness(1.1) contrast(1.2) saturate(1.2)'
       }
 
-      // Sombra sutil
       ctx.shadowColor = 'rgba(0, 0, 0, 0.1)'
       ctx.shadowBlur = 20
       ctx.shadowOffsetX = 0
@@ -426,7 +528,7 @@ export async function generateLimpio(
     productImg.src = imageSrc
   })
 
-  // 4. PRECIO - GRANDE Y DESTACADO sobre fondo de color
+  // 4. PRECIO - GRANDE Y DESTACADO
   const priceBoxY = height * 0.42
   const priceBoxHeight = height * 0.1
   
@@ -435,46 +537,73 @@ export async function generateLimpio(
   ctx.roundRect(width * 0.12, priceBoxY - priceBoxHeight * 0.75, width * 0.35, priceBoxHeight, 12)
   ctx.fill()
   
-  ctx.font = `900 ${width * 0.16}px 'Outfit', sans-serif`
+  ctx.font = `900 ${width * 0.14}px 'Outfit', sans-serif`
   ctx.fillStyle = '#FFFFFF'
   ctx.textAlign = 'left'
-  ctx.fillText(price, width * 0.15, priceBoxY)
+  const truncatedPrice = truncateTextToWidth(ctx, price, width * 0.3)
+  ctx.fillText(truncatedPrice, width * 0.15, priceBoxY)
 
-  // 5. NOMBRE - grande y visible sobre fondo oscuro
+  // 5. NOMBRE - con wrap
   const titleBoxY = height * 0.58
-  const titleBoxHeight = height * 0.09
+  const titleBoxHeight = height * 0.12
   
   ctx.fillStyle = 'rgba(26, 26, 46, 0.95)'
   ctx.beginPath()
-  ctx.roundRect(width * 0.12, titleBoxY - titleBoxHeight * 0.75, width * 0.35, titleBoxHeight, 10)
+  ctx.roundRect(width * 0.12, titleBoxY - titleBoxHeight * 0.7, width * 0.35, titleBoxHeight, 10)
   ctx.fill()
   
-  ctx.font = `bold ${width * 0.075}px 'Outfit', sans-serif`
+  ctx.font = `bold ${width * 0.07}px 'Outfit', sans-serif`
   ctx.fillStyle = '#FFFFFF'
   ctx.textAlign = 'left'
-  const titleText = title.length > 28 ? title.substring(0, 28) + '...' : title
-  ctx.fillText(titleText, width * 0.15, titleBoxY)
+  
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(width * 0.12, titleBoxY - titleBoxHeight * 0.7, width * 0.35, titleBoxHeight)
+  ctx.clip()
+  drawWrappedText(
+    ctx,
+    title,
+    width * 0.15,
+    titleBoxY - titleBoxHeight * 0.3,
+    width * 0.3,
+    height * 0.07,
+    2
+  )
+  ctx.restore()
 
-  // 6. DESCRIPCIÓN si existe
+  // 6. DESCRIPCIÓN si existe - con wrap
   if (description) {
-    const descBoxY = height * 0.67
-    const descBoxHeight = height * 0.07
+    const descBoxY = height * 0.71
+    const descBoxHeight = height * 0.1
     
     ctx.fillStyle = 'rgba(0, 0, 0, 0.08)'
     ctx.beginPath()
     ctx.roundRect(width * 0.12, descBoxY - descBoxHeight * 0.7, width * 0.35, descBoxHeight, 8)
     ctx.fill()
     
-    ctx.font = `${width * 0.032}px 'DM Sans', sans-serif`
+    ctx.font = `${width * 0.03}px 'DM Sans', sans-serif`
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
     ctx.textAlign = 'left'
-    const descText = description.length > 70 ? description.substring(0, 70) + '...' : description
-    ctx.fillText(descText, width * 0.15, descBoxY)
+    
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(width * 0.12, descBoxY - descBoxHeight * 0.7, width * 0.35, descBoxHeight)
+    ctx.clip()
+    drawWrappedText(
+      ctx,
+      description,
+      width * 0.15,
+      descBoxY - descBoxHeight * 0.3,
+      width * 0.3,
+      height * 0.04,
+      2
+    )
+    ctx.restore()
   }
 
   // 7. CONTACTO si existe
   if (contact) {
-    const contactBoxY = height * 0.76
+    const contactBoxY = height * 0.82
     const contactBoxHeight = height * 0.08
     
     ctx.fillStyle = mainColor
@@ -485,18 +614,19 @@ export async function generateLimpio(
     ctx.font = `bold ${width * 0.038}px 'DM Sans', sans-serif`
     ctx.fillStyle = '#FFFFFF'
     ctx.textAlign = 'left'
-    ctx.fillText(contact, width * 0.15, contactBoxY)
+    const truncatedContact = truncateTextToWidth(ctx, contact, width * 0.3)
+    ctx.fillText(truncatedContact, width * 0.15, contactBoxY)
   }
 
   // 8. Badge de plataforma
   ctx.fillStyle = mainColor
   ctx.beginPath()
-  ctx.roundRect(width * 0.12, height * 0.05, width * 0.15, 45, 22)
+  ctx.roundRect(width * 0.12, height * 0.05, width * 0.12, 45, 22)
   ctx.fill()
   ctx.fillStyle = '#FFFFFF'
   ctx.font = `bold ${width * 0.02}px 'Outfit', sans-serif`
   ctx.textAlign = 'center'
-  ctx.fillText('LIMPIO', width * 0.195, height * 0.082)
+  ctx.fillText('LIMPIO', width * 0.18, height * 0.082)
 
   return canvas.toDataURL('image/png')
 }
@@ -556,12 +686,10 @@ export async function generateInstagram(
         ctx.filter = 'brightness(1.15) contrast(1.15) saturate(1.3)'
       }
 
-      // Sombra y borde
       ctx.shadowColor = 'rgba(0, 0, 0, 0.3)'
       ctx.shadowBlur = 25
       ctx.shadowOffsetY = 15
       
-      // Borde blanco sutil
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'
       ctx.lineWidth = 3
       ctx.beginPath()
@@ -576,37 +704,55 @@ export async function generateInstagram(
     productImg.src = imageSrc
   })
 
-  // 4. NOMBRE - texto blanco
+  // 4. NOMBRE - con wrap y centrado
   ctx.font = `bold ${width * 0.055}px 'Outfit', sans-serif`
   ctx.fillStyle = '#FFFFFF'
   ctx.textAlign = 'center'
   ctx.shadowColor = 'rgba(0, 0, 0, 0.3)'
   ctx.shadowBlur = 10
-  const titleText = title.length > 28 ? title.substring(0, 28) + '...' : title
-  ctx.fillText(titleText, width / 2, height * 0.73)
+  
+  const titleMaxWidth = width * 0.8
+  const titleLines = splitTextIntoLines(ctx, title, titleMaxWidth, 2)
+  const titleLineHeight = height * 0.065
+  let titleY = height * 0.73
+  
+  for (let i = 0; i < titleLines.length; i++) {
+    ctx.fillText(titleLines[i], width / 2, titleY)
+    titleY += titleLineHeight
+  }
   ctx.shadowBlur = 0
 
   // 5. PRECIO - destacado
   ctx.font = `bold ${width * 0.09}px 'Outfit', sans-serif`
-  ctx.fillStyle = '#00D9A5' // Verde vibrante
+  ctx.fillStyle = '#00D9A5'
   ctx.shadowColor = 'rgba(0, 0, 0, 0.4)'
   ctx.shadowBlur = 15
-  ctx.fillText(price, width / 2, height * 0.81)
+  const truncatedPrice = truncateTextToWidth(ctx, price, width * 0.7)
+  ctx.fillText(truncatedPrice, width / 2, height * 0.83)
   ctx.shadowBlur = 0
 
-  // 6. DESCRIPCIÓN si existe
+  // 6. DESCRIPCIÓN si existe - con wrap
   if (description) {
     ctx.font = `${width * 0.026}px 'DM Sans', sans-serif`
     ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
-    const descText = description.length > 70 ? description.substring(0, 70) + '...' : description
-    ctx.fillText(descText, width / 2, height * 0.87)
+    ctx.textAlign = 'center'
+    
+    const descLines = splitTextIntoLines(ctx, description, width * 0.85, 2)
+    let descY = height * 0.89
+    
+    for (let i = 0; i < descLines.length; i++) {
+      ctx.fillText(descLines[i], width / 2, descY)
+      descY += height * 0.035
+    }
   }
 
   // 7. CONTACTO si existe
   if (contact) {
     ctx.font = `bold ${width * 0.028}px 'DM Sans', sans-serif`
     ctx.fillStyle = '#FFFFFF'
-    ctx.fillText(contact, width / 2, height * 0.92)
+    ctx.textAlign = 'center'
+    const truncatedContact = truncateTextToWidth(ctx, contact, width * 0.85)
+    ctx.fillText(truncatedContact, width / 2, height * 0.94)
   }
 
   // 8. Badge de plataforma
@@ -698,4 +844,48 @@ function parseRgb(rgb: string): { r: number; g: number; b: number } {
     }
   }
   return { r: 100, g: 100, b: 200 } // Default azul
+}
+
+/**
+ * Divide texto en líneas que entran en maxWidth
+ */
+function splitTextIntoLines(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  maxLines: number = 3
+): string[] {
+  if (!text) return []
+  
+  const words = text.split('')
+  const lines: string[] = []
+  let currentLine = ''
+  
+  for (let i = 0; i < words.length; i++) {
+    const char = words[i]
+    const testLine = currentLine + char
+    const metrics = ctx.measureText(testLine)
+    const testWidth = metrics.width
+    
+    if (testWidth > maxWidth && currentLine.length > 0) {
+      lines.push(currentLine)
+      currentLine = char
+      if (lines.length >= maxLines) {
+        // Si ya tenemos el máximo de líneas, truncamos la última con "..."
+        const lastLine = lines[lines.length - 1]
+        if (lastLine && lastLine.length > 3) {
+          lines[lines.length - 1] = lastLine.slice(0, -3) + '...'
+        }
+        break
+      }
+    } else {
+      currentLine = testLine
+    }
+  }
+  
+  if (currentLine.length > 0 && lines.length < maxLines) {
+    lines.push(currentLine)
+  }
+  
+  return lines
 }
